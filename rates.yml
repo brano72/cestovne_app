@@ -1,4 +1,5 @@
-# Foreign per diem bands (percent of daily_base) – SR rules
+version: 1
+
 foreign_time_bands:
   - name: "to_6"
     min_hours_inclusive: 0
@@ -13,13 +14,41 @@ foreign_time_bands:
     max_hours_exclusive: 1000
     percent_of_daily: 100
 
-# Daily base per diem (SR MF measure 401/2012, version effective 2026-01-30)
-countries:  
-SK:
-  currency: EUR
+countries:
+  CZ:
+    currency: CZK
+    schedules:
+      - effective_from: "2026-01-30"
+        daily_base: 600
+
+  PL:
+    currency: EUR
+    schedules:
+      - effective_from: "2026-01-30"
+        daily_base: 37
+
+  DE:
+    currency: EUR
+    schedules:
+      - effective_from: "2026-01-30"
+        daily_base: 45
+
+  AT:
+    currency: EUR
+    schedules:
+      - effective_from: "2026-01-30"
+        daily_base: 45
+
+  UK:
+    currency: GBP
+    schedules:
+      - effective_from: "2026-01-30"
+        daily_base: 37
+
+  SK:
+    currency: EUR
     schedules:
       - effective_from: "2026-01-01"
-        # tuzemské stravné – doplň správne sumy podľa obdobia, ktoré počítaš
         bands:
           - name: "5_12"
             min_hours_inclusive: 5
@@ -33,36 +62,7 @@ SK:
             min_hours_inclusive: 18
             max_hours_exclusive: 1000
             amount: 0.00
-  CZ:
-    currency: CZK
-    schedules:
-      - effective_from: "2026-01-30"
-        daily_base: 600
-  PL:
-    currency: EUR
-    schedules:
-      - effective_from: "2026-01-30"
-        daily_base: 37
-  DE:
-    currency: EUR
-    schedules:
-      - effective_from: "2026-01-30"
-        daily_base: 45
-  AT:
-    currency: EUR
-    schedules:
-      - effective_from: "2026-01-30"
-        daily_base: 45
-  UK:
-    currency: GBP
-    schedules:
-      - effective_from: "2026-01-30"
-        daily_base: 37
 
-# FX rates to EUR (1 unit of currency -> EUR), versioned for future edits.
-# Defaults set from ECB reference rates on 2026-01-02:
-# EUR 1 = CZK 24.177  => 1 CZK = 0.0413616247 EUR
-# EUR 1 = GBP 0.8719  => 1 GBP = 1.1469205184 EUR
 fx_rates_to_eur:
   EUR:
     schedules:
@@ -76,4 +76,3 @@ fx_rates_to_eur:
     schedules:
       - effective_from: "2026-01-01"
         rate: 1.1469205184
-
