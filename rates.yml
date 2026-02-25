@@ -1,6 +1,6 @@
 version: 1
 
-# Percentá zo základnej dennej sadzby podľa počtu hodín v zahraničí
+# Zahraničie: percentá zo základnej sadzby podľa času mimo SR v daný kalendárny deň
 foreign_time_bands:
   - name: "to_6"
     min_hours_inclusive: 0
@@ -16,56 +16,92 @@ foreign_time_bands:
     percent_of_daily: 100
 
 countries:
+  # Základné sadzby stravného pri zahraničných pracovných cestách (štandardný režim)
+  # Pozn.: tieto sadzby sú v praxi použiteľné aj pre 2025 aj 2026 (ak nie si v osobitnom režime §1a).
   CZ:
     currency: CZK
     schedules:
-      - effective_from: "2025-01-01"
+      - effective_from: "2013-01-01"
         daily_base: 600
 
   PL:
     currency: EUR
     schedules:
-      - effective_from: "2025-01-01"
+      - effective_from: "2013-01-01"
         daily_base: 37
 
   DE:
     currency: EUR
     schedules:
-      - effective_from: "2025-01-01"
+      - effective_from: "2013-01-01"
         daily_base: 45
 
   AT:
     currency: EUR
     schedules:
-      - effective_from: "2025-01-01"
+      - effective_from: "2013-01-01"
         daily_base: 45
 
   UK:
     currency: GBP
     schedules:
-      - effective_from: "2025-01-01"
+      - effective_from: "2013-01-01"
         daily_base: 37
 
-  # Slovensko – tuzemské stravné (zatiaľ 0, doplníš reálne sadzby)
+  # Slovensko – tuzemské stravné (mení sa v priebehu 2025; pre 2026 platí zatiaľ rovnaké ako od 1.12.2025)
   SK:
     currency: EUR
     schedules:
+      # do 31.03.2025
       - effective_from: "2025-01-01"
         bands:
           - name: "5_12"
             min_hours_inclusive: 5
             max_hours_exclusive: 12
-            amount: 0.00
+            amount: 8.30
           - name: "12_18"
             min_hours_inclusive: 12
             max_hours_exclusive: 18
-            amount: 0.00
+            amount: 12.30
           - name: "18_plus"
             min_hours_inclusive: 18
             max_hours_exclusive: 1000
-            amount: 0.00
+            amount: 18.40
 
-# Prepočty mien na EUR
+      # od 01.04.2025 do 30.11.2025
+      - effective_from: "2025-04-01"
+        bands:
+          - name: "5_12"
+            min_hours_inclusive: 5
+            max_hours_exclusive: 12
+            amount: 8.80
+          - name: "12_18"
+            min_hours_inclusive: 12
+            max_hours_exclusive: 18
+            amount: 13.10
+          - name: "18_plus"
+            min_hours_inclusive: 18
+            max_hours_exclusive: 1000
+            amount: 19.50
+
+      # od 01.12.2025 (platné aj pre rok 2026, pokiaľ nepríde ďalšia zmena)
+      - effective_from: "2025-12-01"
+        bands:
+          - name: "5_12"
+            min_hours_inclusive: 5
+            max_hours_exclusive: 12
+            amount: 9.30
+          - name: "12_18"
+            min_hours_inclusive: 12
+            max_hours_exclusive: 18
+            amount: 13.80
+          - name: "18_plus"
+            min_hours_inclusive: 18
+            max_hours_exclusive: 1000
+            amount: 20.60
+
+# FX prepočty do EUR – nechávam editovateľné.
+# (Ak chceš presnosť, doplníme tu historické kurzy podľa dátumu alebo to napojíme na ECB; teraz je to manuálne.)
 fx_rates_to_eur:
   EUR:
     schedules:
@@ -75,9 +111,13 @@ fx_rates_to_eur:
   CZK:
     schedules:
       - effective_from: "2025-01-01"
-        rate: 0.04136   # približne, môžeš upraviť
+        rate: 0.04136
+      - effective_from: "2026-01-01"
+        rate: 0.04136
 
   GBP:
     schedules:
       - effective_from: "2025-01-01"
-        rate: 1.15      # približne, môžeš upraviť
+        rate: 1.15
+      - effective_from: "2026-01-01"
+        rate: 1.15
