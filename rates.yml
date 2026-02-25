@@ -1,5 +1,6 @@
 version: 1
 
+# Percentá zo základnej dennej sadzby podľa počtu hodín v zahraničí
 foreign_time_bands:
   - name: "to_6"
     min_hours_inclusive: 0
@@ -18,37 +19,38 @@ countries:
   CZ:
     currency: CZK
     schedules:
-      - effective_from: "2026-01-30"
+      - effective_from: "2025-01-01"
         daily_base: 600
 
   PL:
     currency: EUR
     schedules:
-      - effective_from: "2026-01-30"
+      - effective_from: "2025-01-01"
         daily_base: 37
 
   DE:
     currency: EUR
     schedules:
-      - effective_from: "2026-01-30"
+      - effective_from: "2025-01-01"
         daily_base: 45
 
   AT:
     currency: EUR
     schedules:
-      - effective_from: "2026-01-30"
+      - effective_from: "2025-01-01"
         daily_base: 45
 
   UK:
     currency: GBP
     schedules:
-      - effective_from: "2026-01-30"
+      - effective_from: "2025-01-01"
         daily_base: 37
 
+  # Slovensko – tuzemské stravné (zatiaľ 0, doplníš reálne sadzby)
   SK:
     currency: EUR
     schedules:
-      - effective_from: "2026-01-01"
+      - effective_from: "2025-01-01"
         bands:
           - name: "5_12"
             min_hours_inclusive: 5
@@ -63,16 +65,19 @@ countries:
             max_hours_exclusive: 1000
             amount: 0.00
 
+# Prepočty mien na EUR
 fx_rates_to_eur:
   EUR:
     schedules:
       - effective_from: "1900-01-01"
         rate: 1.0
+
   CZK:
     schedules:
-      - effective_from: "2026-01-01"
-        rate: 0.0413616247
+      - effective_from: "2025-01-01"
+        rate: 0.04136   # približne, môžeš upraviť
+
   GBP:
     schedules:
-      - effective_from: "2026-01-01"
-        rate: 1.1469205184
+      - effective_from: "2025-01-01"
+        rate: 1.15      # približne, môžeš upraviť
