@@ -1,38 +1,38 @@
-# per_diem.py
 from __future__ import annotations
-
-from dataclasses import dataclass
 from datetime import date
+from typing import Any
 
-from rates import RatesConfig, convert_to_eur, pick_country_schedule, pick_foreign_band
+from rates import (
+    PerDiemResult,
+    Money,
+    pick_country_schedule,
+    pick_fx_rate,
+)
 
+def _percent_for_hours(bands, hours: float) -> float:
+    for b in bands:
+        if b["min"] <= hours < b["max"]:
+            return b["percent"]
+    return 0.0
 
-@dataclass(frozen=True)
-class Money:
-    amount: float
-    currency: str
-
-
-@dataclass(frozen=True)
-class MoneyWithEur:
-    original: Money
-    eur: Money
-
-
-def compute_foreign_per_diem_for_day(
-    rates: RatesConfig,
-    country: str,
-    day: date,
-    hours_in_country_that_day: float,
-) -> MoneyWithEur:
+def compute_foreign_per_diem_for_day(rates: Any, country: str, day: date, hours: float) -> PerDiemResult:
+    """
+    Computes foreign per diem for a single day segment.
+    - rates: output of load_rates()
+    - country: country code (CZ, PL, DE, AT, UK, ...)
+    - day: date
+    - hours: number of hours in that country on that day
+    """
+    # pick country schedule (foreign only; SK is handled elsewhere)
     sched, currency = pick_country_schedule(rates, country, day)
-    band = pick_foreign_band(rates, hours_in_country_that_day)
 
-    original_amount = round(sched.daily_base * (band.percent_of_daily / 100.0), 2)
-    original = Money(amount=original_amount, currency=currency)
+    percent = _percent_for_hours(rates["foreign_bands"], hours)
+    original_amount = round(sched.daily_base * (percent / 100.0), 2)
 
-    eur_amount = convert_to_eur(rates, original_amount, currency, day)
-    eur = Money(amount=eur_amount, currency="EUR")
+    fx_rate = pick_fx_rate(rates, currency, day)
+    eur_amount = round(original_amount * fx_rate, 2)
 
-    return MoneyWithEur(original=original, eur=eur)
-
+    return PerDiemResult(
+        original=Money(amount=original_amount, currency=currency),
+        eur=Money(amount=eur_amount, currency="EUR"),
+    )
