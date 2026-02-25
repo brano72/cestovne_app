@@ -14,7 +14,25 @@ foreign_time_bands:
     percent_of_daily: 100
 
 # Daily base per diem (SR MF measure 401/2012, version effective 2026-01-30)
-countries:
+countries:  
+SK:
+  currency: EUR
+    schedules:
+      - effective_from: "2026-01-01"
+        # tuzemské stravné – doplň správne sumy podľa obdobia, ktoré počítaš
+        bands:
+          - name: "5_12"
+            min_hours_inclusive: 5
+            max_hours_exclusive: 12
+            amount: 0.00
+          - name: "12_18"
+            min_hours_inclusive: 12
+            max_hours_exclusive: 18
+            amount: 0.00
+          - name: "18_plus"
+            min_hours_inclusive: 18
+            max_hours_exclusive: 1000
+            amount: 0.00
   CZ:
     currency: CZK
     schedules:
