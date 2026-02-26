@@ -1,0 +1,165 @@
+import fitz  # PyMuPDF
+from datetime import timedelta
+from pathlib import Path
+
+from rates import load_rates
+from per_diem import compute_foreign_per_diem_for_day
+from sk_per_diem import load_sk_rates, compute_sk_per_diem_for_day
+from compute_trip_segments import split_trip_into_country_segments, iter_days, hours_in_day
+from import_excel import load_trips
+
+TEMPLATE_PDF = "CP NEM BLEX  - Január 25.docx.pdf"
+RATES_YML = "rates.yml"
+XLSX = "Sluzobne cesty.xlsx"
+SHEET = "September 2025"  # <-- zmeň podľa mesiaca
+OUT_PDF = "export_pre_uctovnicku_september_2025.pdf"
+
+# --- Overlay "whiteout" rectangles (in PDF points) ---
+# Tieto oblasti zakrývajú pôvodný text vo vzore (keďže vzor je vyplnený príklad).
+# Ak by sa ti text prekrýval, uprav rozmery pár bodov.
+PAGE1_PURPOSE_RECT = fitz.Rect(85, 120, 520, 155)   # účel + miesto výkonu práce
+PAGE1_DATES_RECT   = fitz.Rect(85, 232, 520, 262)   # nástup / návrat / doba trvania
+PAGE1_STRAVNE_RECT = fitz.Rect(405, 470, 520, 515)  # v tabuľke "Stravné" (približne)
+PAGE2_DIETY_RECT   = fitz.Rect(85, 195, 520, 225)   # devízový nárok: nárok v diétach
+
+# --- Text anchor points ---
+PAGE1_PURPOSE_POS = (92, 133)
+PAGE1_DATES_POS   = (92, 244)
+PAGE1_STRAVNE_POS = (415, 505)   # vypíše sumu do tabuľky
+PAGE2_DIETY_POS   = (250, 214)   # vypíše sumu k "nárok v diétach"
+
+FONT_SIZE = 10
+FONT_SIZE_BOLD = 11
+
+
+def trip_duration_days(start_dt, end_dt) -> int:
+    # 27.01 -> 30.01 = 4 dni (inclusive)
+    return (end_dt.date() - start_dt.date()).days + 1
+
+
+def compute_trip_total_eur(t, rates, sk_schedules) -> float:
+    segments = split_trip_into_country_segments(t)
+    total = 0.0
+    for country, s, e in segments:
+        for day in iter_days(s, e):
+            hrs = hours_in_day(s, e, day)
+            if hrs <= 0:
+                continue
+            if country == "SK":
+                total += compute_sk_per_diem_for_day(sk_schedules, day, hrs)
+            else:
+                res = compute_foreign_per_diem_for_day(rates, country, day, hrs)
+                total += res.eur.amount
+    return round(total, 2)
+
+
+def whiteout(page, rect: fitz.Rect):
+    # Prekryje pôvodný text bielym obdĺžnikom
+    page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1), width=0)
+
+
+def write_text(page, x, y, text, size=FONT_SIZE):
+    page.insert_text((x, y), text, fontsize=size, color=(0, 0, 0))
+
+
+def main():
+    template_path = Path(TEMPLATE_PDF)
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template PDF not found: {TEMPLATE_PDF}")
+
+    rates = load_rates(RATES_YML)
+    sk_schedules = load_sk_rates(RATES_YML)
+    trips = load_trips(XLSX, SHEET)
+
+    tpl = fitz.open(str(template_path))
+    if tpl.page_count < 2:
+        raise ValueError("Template must have at least 2 pages (your sample has 2).")
+
+    out = fitz.open()
+
+    # Vyrob 2 strany na každú cestu
+    for t in trips:
+        total_eur = compute_trip_total_eur(t, rates, sk_schedules)
+
+        # Strana 1 (copy template page 1)
+        p1 = out.new_page(width=tpl[0].rect.width, height=tpl[0].rect.height)
+        p1.show_pdf_page(p1.rect, tpl, 0)
+
+        # Prekry pôvodné vyplnené hodnoty
+        whiteout(p1, PAGE1_PURPOSE_RECT)
+        whiteout(p1, PAGE1_DATES_RECT)
+        whiteout(p1, PAGE1_STRAVNE_RECT)
+
+        # Texty (účel + miesto)
+        purpose = t.get("purpose", "").strip()
+        country = t.get("country", "SK").strip()
+
+        write_text(
+            p1,
+            PAGE1_PURPOSE_POS[0],
+            PAGE1_PURPOSE_POS[1],
+            f"Účel cesty: {purpose}",
+            size=FONT_SIZE_BOLD,
+        )
+        write_text(
+            p1,
+            PAGE1_PURPOSE_POS[0],
+            PAGE1_PURPOSE_POS[1] + 12,
+            f"Miesto výkonu práce: {country}",
+            size=FONT_SIZE_BOLD,
+        )
+
+        # Nástup / návrat / doba trvania
+        start_dt = t["start_dt"]
+        end_dt = t["end_dt"]
+        dur_days = trip_duration_days(start_dt, end_dt)
+
+        write_text(
+            p1,
+            PAGE1_DATES_POS[0],
+            PAGE1_DATES_POS[1],
+            f"Nástup na pracovnú cestu: {start_dt.strftime('%d.%m.%Y')}  Doba trvania: {dur_days} dni",
+            size=FONT_SIZE_BOLD,
+        )
+        write_text(
+            p1,
+            PAGE1_DATES_POS[0],
+            PAGE1_DATES_POS[1] + 12,
+            f"Návrat: {end_dt.strftime('%d.%m.%Y')}",
+            size=FONT_SIZE_BOLD,
+        )
+
+        # Dopíš stravné sumu do tabuľky (iba informatívne)
+        write_text(
+            p1,
+            PAGE1_STRAVNE_POS[0],
+            PAGE1_STRAVNE_POS[1],
+            f"{total_eur:.2f} €",
+            size=FONT_SIZE_BOLD,
+        )
+
+        # Strana 2 (copy template page 2)
+        p2 = out.new_page(width=tpl[1].rect.width, height=tpl[1].rect.height)
+        p2.show_pdf_page(p2.rect, tpl, 1)
+
+        # Prekry pôvodný “nárok v diétach”
+        whiteout(p2, PAGE2_DIETY_RECT)
+
+        # Vypíš nový nárok v diétach
+        write_text(
+            p2,
+            PAGE2_DIETY_POS[0],
+            PAGE2_DIETY_POS[1],
+            f"nárok v diétach : {total_eur:.2f} Eur",
+            size=FONT_SIZE_BOLD,
+        )
+
+    out.save(OUT_PDF)
+    out.close()
+    tpl.close()
+
+    print("DONE:", OUT_PDF)
+
+
+if __name__ == "__main__":
+    main()
