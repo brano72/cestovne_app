@@ -9,3 +9,5 @@ make_debug_grid(
 )
 print("OK -> tmp/cp_template_grid.pdf")
 PY
+
+ls -l make_grid.py
